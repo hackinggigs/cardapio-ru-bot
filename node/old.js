@@ -66,7 +66,6 @@ app.get('/webhook', function(req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
       req.query['hub.verify_token'] === VALIDATION_TOKEN) {
     console.log("Validating webhook");
-    getWeekMenu();
     res.status(200).send(req.query['hub.challenge']);
   } else {
     console.error("Failed validation. Make sure the validation tokens match.");
@@ -223,7 +222,7 @@ rule.dayOfWeek = [0, 1, 2, 3, 4, 5, 6];
 rule.hour = 11;
 rule.minute = 0;
 
-var DayMenu = 
+var dailyMenu = 
   {
     "basics": "\u00a0Arroz parboilizado/ Arroz integral, Feij\u00e3o", 
     "date": "2016-12-12", 
@@ -822,87 +821,6 @@ function sendAccountLinking(recipientId) {
   callSendAPI(messageData);
 }
 
-var options = {
-    host: 'http://prubot-env.dya9as3mew.us-west-2.elasticbeanstalk.com',
-    port: 80,
-    path: '/menu',
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-};
-
-// var http = require("http");
-// var https = require("https");
-
-/**
- * getJSON:  REST get request returning JSON object(s)
- * @param options: http options object
- * @param callback: callback to pass the results JSON object(s) back
- */
-function getJSON(options, onResult) {
-    console.log("rest::getJSON");
-
-    var prot = options.port == 80 ? https : http;
-    var req = prot.request(options, function(res)
-    {
-        var output = '';
-        console.log(options.host + ':' + res.statusCode);
-        res.setEncoding('utf8');
-
-        res.on('data', function (chunk) {
-            output += chunk;
-        });
-
-        res.on('end', function() {
-            var obj = JSON.parse(output);
-            onResult(res.statusCode, obj);
-        });
-    });
-
-    req.on('error', function(err) {
-        //res.send('error: ' + err.message);
-    });
-
-    req.end();
-};
-
-function getWeekMenu(){
-  getJSON(options, function(statusCode, result) {
-    // I could work with the result html/json here.  I could also just return it
-    console.log("onResult: (" + statusCode + ")" + JSON.stringify(result));
-    res.statusCode = statusCode;
-    res.send(result);
-  });
-}
-
-function getDayMenuInWeekMenu(weekMenu) {
-  var dayOfTheWeek = getDay();
-  var DayMenu = weekMenu[dayOfTheWeek];
-  return DayMenu;
-}
-
-function formatDayMenuInOneString(DayMenu) {
-  var side_dish = "Complemento: " + DayMenu.side_dish;
-  var salad = "Salada: " + DayMenu.salad;
-  var main_dish = "Prato principal: " + DayMenu.main_dish;
-  var dessert = "Sobremesa: " + DayMenu.dessert;
-  var basics = "Acompanhamento: " + DayMenu.basics;
-  var DayMenuInOneString = side_dish + "/n" + salad + "/n" + main_dish + "/n" + dessert "/n" + basics;
-}
-
-function formatToMessengerBotJson(recipientId, DayMenu) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: DayMenu
-    }
-  };
-  return messageData;
-}
-
 /*
  * Call the Send API. The message data goes in the body. If successful, we'll 
  * get the message id in a response 
@@ -933,13 +851,6 @@ function callSendAPI(messageData) {
   });  
 }
 
-function sendDayMenu(recipientId) {
-  var weekMenu = getWeekMenu();
-  var DayMenu = getDayMenuInWeekMenu(weekMenu);
-  var DayMenuConcatenated = formatDayMenuInOneString(DayMenu);
-  var DayMenuFormattedInMessengerBotJson = formatToMessengerBotJson(recipientId, DayMenuConcatenated);
-  callSendAPI(DayMenuFormattedInMessengerBotJson);
-}
 
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
